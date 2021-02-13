@@ -2,35 +2,33 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	gcs "google.golang.org/api/customsearch/v1"
 	gapi "google.golang.org/api/googleapi/transport"
 )
 
-func populateWebpages(ctx context.Context, opts Options) []string {
-
-	searchQuery := strings.Join(opts.SearchTerms, "")
+func populateWebpages(ctx context.Context, opts Options) ([]string, bool) {
 
 	client := &http.Client{Transport: &gapi.APIKey{Key: GoogleToken}}
 
 	svc, err := gcs.New(client)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error building google service, error: %s\n", err)
+		return []string{}, false
 	}
 
-	resp, err := svc.Cse.List().Cx(GoogleCSE).Q(searchQuery).Do()
+	resp, err := svc.Cse.List().Cx(GoogleCSE).Num(int64(opts.LinkDepth)).Q(opts.SearchQuery).Do()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error executing search: %s, error recieved: %s\n", opts.SearchQuery, err)
+		return []string{}, false
 	}
 
+	links := make([]string, len(resp.Items))
 	for i, result := range resp.Items {
-		fmt.Printf("#%d: %s\n", i+1, result.Title)
-		fmt.Printf("\t%s\n", result.Snippet)
+		links[i] = result.Link
 	}
 
-	return []string{"cool"}
+	return links, true
 }

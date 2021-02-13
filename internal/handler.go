@@ -2,7 +2,7 @@ package internal
 
 import (
 	//	"errors"
-	_ "context"
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -14,13 +14,14 @@ import (
 type Options struct {
 	LinkDepth   int
 	SourceDepth int
-	SearchTerms []string
+	SearchQuery string
 }
 
 const (
 	LINK_DEPTH_DEFAULT   = 1
 	SOURCE_DEPTH_DEFAULT = 3
-	HELP_STRING          = ">>> Rulebot usage: !rulebot [options] search terms\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +
+	TALK_TO_KELLEN       = "Something went wrong processing the search, tell Kellen to check the logs"
+	HELP_STRING          = ">>> \nRulebot usage: \t!rulebot [options] search terms\n\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +
 		"After the first non option string everything will be treated as a search term so options must come first!\n\n" +
 		"Options are listed as follows:\n\t/LD=[number]\t\t(Link Depth, default 1) Use this option to specify the number of links the bot will traverse looking for a topic\n" +
 		"\t/SD=[number]\t\t(Source Depth, default 3) Use this option to specify the number of source images the bot will post when it finds a topic\n" +
@@ -53,7 +54,7 @@ func parseIntOption(option string) (int, bool) {
 func populateOptions(content string) (Options, string) {
 
 	terms := strings.Fields(content)
-	opts := Options{LINK_DEPTH_DEFAULT, SOURCE_DEPTH_DEFAULT, []string{}}
+	opts := Options{LINK_DEPTH_DEFAULT, SOURCE_DEPTH_DEFAULT, ""}
 
 	if len(terms) == 1 {
 		log.Println("No arguments specified, returning help string")
@@ -68,7 +69,7 @@ func populateOptions(content string) (Options, string) {
 		if !strings.HasPrefix(term, "/") {
 
 			// treat the rest of the terms as search terms. if there was a flag in there, thats on them.
-			opts.SearchTerms = terms[index:]
+			opts.SearchQuery = strings.Join(terms[index:], " ")
 			break
 
 		} else if strings.HasPrefix(term, "/HELP") {
@@ -118,11 +119,17 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 	}
 
 	log.Printf("Options for message: %+v\n", opts)
-	// ctx := context.TODO()
-	// webpages := populateWebpages(ctx, opts)
-	// fmt.Println(webpages)
 
-	// main.Rulebooks
+	ctx := context.TODO()
+	webpages, success := populateWebpages(ctx, opts)
+	if !success {
+		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
+		return
+	} else if 0 == len(webpages) {
+		session.ChannelMessageSend(message.ChannelID, "No results found, broaden your search")
+		return
+	}
 
+	fmt.Println(webpages)
 	session.ChannelMessageSend(message.ChannelID, HELP_STRING)
 }
