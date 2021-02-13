@@ -55,17 +55,18 @@ func findSources(ctx context.Context, webpage string, sourceDepth int, ch chan<-
 
 	resp, err := http.Get(webpage)
 	if nil != err {
-		log.Fatalf("goroutine crawling: %s encountered error: %s\n", webpage, err)
+		log.Printf("goroutine crawling: %s encountered error: %s\n", webpage, err)
 		return
 	} else if http.StatusOK != resp.StatusCode {
-		log.Fatalf("goroutine crawling: %s got response %s from URL\n", webpage, resp.Status)
+		log.Printf("goroutine crawling: %s got response %s from URL\n", webpage, resp.Status)
 		return
 	}
 
 	defer resp.Body.Close()
 	doc, err := gq.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		log.Fatal(err)
+	if nil != err {
+		log.Printf("Error parsing html document to reader: %s\n", err)
+		return
 	}
 
 	rawSources := make([]string, 0)
@@ -105,7 +106,7 @@ func crawlLinks(ctx context.Context, webpages []string, sourceDepth int) ([]Sour
 	select {
 	// dont need this now... but maybe 🤔
 	case <-ctx.Done():
-		log.Fatalln("Context canceled while waiting for search")
+		log.Println("Context canceled while waiting for search")
 		return []SourcePage{}, false
 	case <-searchDone:
 		log.Println("search completed successfully, processing items")

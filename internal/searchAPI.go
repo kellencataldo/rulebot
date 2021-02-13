@@ -15,13 +15,13 @@ func populateWebpages(ctx context.Context, searchQuery string, linkDepth int64) 
 
 	svc, err := gcs.New(client)
 	if err != nil {
-		log.Fatalf("error building google service, error: %s\n", err)
+		log.Printf("error building google service, error: %s\n", err)
 		return []string{}, false
 	}
 
 	resp, err := svc.Cse.List().Cx(GoogleCSE).Num(linkDepth).Q(searchQuery).Do()
 	if err != nil {
-		log.Fatalf("error executing search: %s, error recieved: %s\n", searchQuery, err)
+		log.Printf("error executing search: %s, error recieved: %s\n", searchQuery, err)
 		return []string{}, false
 	}
 

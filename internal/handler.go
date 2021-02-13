@@ -100,7 +100,7 @@ func convertToFilenames(sources []SourcePage) []string {
 
 	files := make([]string, 0, len(sources))
 	for _, source := range sources {
-		files = append(path.Join(RuleBooks, files[source.RuleBook+source.Page+FILE_EXTENSION]))
+		files = append(files, path.Join(Rulebooks, source.Rulebook+source.Page+FILE_EXTENSION))
 	}
 
 	return files
@@ -145,7 +145,7 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 	for _, filename := range files {
 		f, err := os.Open(filename)
 		if nil != err {
-			log.Fatalf("Error opening file for attachment: %s\n", err)
+			log.Printf("Error opening file for attachment: %s\n", err)
 			session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
 			continue
 		}
@@ -154,13 +154,13 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 			defer f.Close()
 			_, err := session.ChannelFileSend(message.ChannelID, filename, f)
 			if nil != err {
-				log.Fatalf("Error sending file: %s\n", err)
+				log.Printf("Error sending file: %s\n", err)
 				session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
 				return
 			}
 
 			log.Printf("Successfully sent file: %s\n", filename)
-		}
+		}()
 	}
 
 	log.Println("Finished handling request")
