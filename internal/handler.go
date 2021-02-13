@@ -1,18 +1,18 @@
 package internal
 
 import (
-	"errors"
+	//	"errors"
+	_ "context"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
 
 	dg "github.com/bwmarrin/discordgo"
-	rb "github.com/kellencataldo/rulebot/cmd"
 )
 
 type Options struct {
-	LinkDpeth   int
+	LinkDepth   int
 	SourceDepth int
 	SearchTerms []string
 }
@@ -20,7 +20,7 @@ type Options struct {
 const (
 	LINK_DEPTH_DEFAULT   = 1
 	SOURCE_DEPTH_DEFAULT = 3
-	HELP_STRING          = "Rulebot usage: !rulebot [options] search terms\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +
+	HELP_STRING          = ">>> Rulebot usage: !rulebot [options] search terms\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +
 		"After the first non option string everything will be treated as a search term so options must come first!\n\n" +
 		"Options are listed as follows:\n\t/LD=[number]\t\t(Link Depth, default 1) Use this option to specify the number of links the bot will traverse looking for a topic\n" +
 		"\t/SD=[number]\t\t(Source Depth, default 3) Use this option to specify the number of source images the bot will post when it finds a topic\n" +
@@ -37,13 +37,13 @@ func parseIntOption(option string) (int, bool) {
 	parsed := strings.Split(option, "=")
 
 	if 2 == len(parsed) {
-		log.Println("Unable to parse option: %s, into identifier and value pair\n")
+		log.Printf("Unable to parse option: %s, into identifier and value pair", option)
 		return 0, false
 	}
 
 	value, err := strconv.Atoi(parsed[1])
 	if nil != err {
-		log.Println("Unable to convert value: %s to integer\n", parsed[1])
+		log.Printf("Unable to convert value: %s to integer\n", parsed[1])
 		return 0, false
 	}
 
@@ -60,9 +60,12 @@ func populateOptions(content string) (Options, string) {
 		return opts, HELP_STRING
 	}
 
-	for index, term := range terms[1:] {
+	terms = terms[1:]
+	fmt.Println(terms)
 
-		if !strings.HasPrefix("/") {
+	for index, term := range terms {
+
+		if !strings.HasPrefix(term, "/") {
 
 			// treat the rest of the terms as search terms. if there was a flag in there, thats on them.
 			opts.SearchTerms = terms[index:]
@@ -73,14 +76,16 @@ func populateOptions(content string) (Options, string) {
 			return opts, HELP_STRING
 
 		} else if strings.HasPrefix(term, "/LD=") {
+			var success bool
 			opts.LinkDepth, success = parseIntOption(term)
 			if !success {
-				log.Printf("Unable to parse /LD option string: %s\n, term")
+				log.Printf("Unable to parse /LD option string: %s\n", term)
 				return opts, "Malformed /LD option, run **!rulebot /HELP** to see proper formatting"
 			}
 
 		} else if strings.HasPrefix(term, "/SD=") {
-			opts.SearchDepth, success = parseIntOption(term)
+			var success bool
+			opts.SourceDepth, success = parseIntOption(term)
 			if !success {
 				log.Printf("Unable to parse /SD option string: %s\n", term)
 				return opts, "Malformed /SD option, run **!rulebot /HELP** to see proper formatting"
@@ -88,8 +93,8 @@ func populateOptions(content string) (Options, string) {
 
 		} else {
 			// unknown option here, just bail
-			log.Printf("Unknown option: %s, returning error\n")
-			return opts, fmt.Sprinf("Unknown option specified: %s, type **!ruleboy help** for supported options", term)
+			log.Printf("Unknown option: %s, returning error\n", term)
+			return opts, fmt.Sprintf("Unknown option specified: %s, type **!ruleboy help** for supported options", term)
 		}
 	}
 
@@ -103,7 +108,7 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 	}
 
 	log.Printf("handling message: %s\n", message.Content)
-	opts, responseString := populateOptions(messsage.Content)
+	opts, responseString := populateOptions(message.Content)
 
 	// ehhh, i could be smarter about this lol
 	if "" != responseString {
@@ -113,6 +118,9 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 	}
 
 	log.Printf("Options for message: %+v\n", opts)
+	// ctx := context.TODO()
+	// webpages := populateWebpages(ctx, opts)
+	// fmt.Println(webpages)
 
 	// main.Rulebooks
 

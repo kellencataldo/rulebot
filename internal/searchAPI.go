@@ -1,29 +1,28 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	gcs "google.golang.org/api/customsearch/v1"
 	gapi "google.golang.org/api/googleapi/transport"
 )
 
-const (
-	apiKey = "some-api-key"
-	cx     = "some-custom-search-engine-id"
-	query  = "some-custom-query"
-)
+func populateWebpages(ctx context.Context, opts Options) []string {
 
-func findLinks() {
-	client := &http.Client{Transport: &transport.APIKey{Key: apiKey}}
+	searchQuery := strings.Join(opts.SearchTerms, "")
 
-	svc, err := customsearch.New(client)
+	client := &http.Client{Transport: &gapi.APIKey{Key: GoogleToken}}
+
+	svc, err := gcs.New(client)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	resp, err := svc.Cse.List().Cx(cx).Q(query).Do()
+	resp, err := svc.Cse.List().Cx(GoogleCSE).Q(searchQuery).Do()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,4 +31,6 @@ func findLinks() {
 		fmt.Printf("#%d: %s\n", i+1, result.Title)
 		fmt.Printf("\t%s\n", result.Snippet)
 	}
+
+	return []string{"cool"}
 }

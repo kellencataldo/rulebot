@@ -4,4 +4,8 @@ if [ $retVal -ne 0 ]; then
     exit
 fi
 
-exit
+./main -discord-token $DISCORD_TOKEN -google-cse $GOOGLE_CSE_ID -google-token $GOOGLE_TOKEN
+
+
+
+

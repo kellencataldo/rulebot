@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -9,32 +8,14 @@ import (
 	"syscall"
 
 	dg "github.com/bwmarrin/discordgo"
-	rb "github.com/kellencataldo/rulebot/internal/rulebot"
+	rb "github.com/kellencataldo/rulebot/internal"
 )
-
-var (
-	output       string
-	discordToken string
-	GoogleToken  string
-	Rulebooks    string
-)
-
-func init() {
-
-	flag.StringVar(&output, "logfile", "", "Logfile for debugging (default outputs to stdout")
-	flag.StringVar(&discordToken, "discord-token", "", "API token for rulebot to connect to discord")
-	flag.StringVar(&GoogleToken, "google-token", "", "API token for google searches")
-	flag.StringVar(&GoogleCSE, "google-cse", "", "custom search engine for google searches")
-	flag.StringVar(&Rulebooks, "rulebooks", ".", "Location of directory containing rule book images")
-
-	flag.Parse()
-}
 
 func main() {
 
-	if "" != output {
+	if "" != rb.Output {
 
-		f, err := os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(rb.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if nil != err {
 			log.Fatalf("Unable to open log file, error recieved: %s\n", err)
 			os.Exit(1)
@@ -44,23 +25,23 @@ func main() {
 		defer f.Close()
 	}
 
-	if "" == discordToken {
+	if "" == rb.DiscordToken {
 		log.Fatal("No API token for discord specified")
 		os.Exit(1)
 	}
 
-	if "" == GoogleToken {
+	if "" == rb.GoogleToken {
 		log.Fatal("No API token for google searches specified")
 		os.Exit(1)
 	}
 
-	if "" == GoogleCSE {
+	if "" == rb.GoogleCSE {
 		log.Fatal("No custom search engine for google specified")
 		os.Exit(1)
 	}
 
 	log.Println("rulebot starting.")
-	dSession, err := dg.New("Bot " + token)
+	dSession, err := dg.New("Bot " + rb.DiscordToken)
 	if nil != err {
 		log.Fatalf("Unable to create discord session, error: %s\n", err)
 		os.Exit(1)
