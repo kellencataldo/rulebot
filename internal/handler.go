@@ -1,4 +1,4 @@
-package rulebot
+package internal
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	dg "github.com/bwmarrin/discordgo"
-	rb "github.com/kellencataldo/rulebot/cmd/main"
+	rb "github.com/kellencataldo/rulebot/cmd"
 )
 
 type Options struct {

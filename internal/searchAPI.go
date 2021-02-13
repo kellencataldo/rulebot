@@ -1,4 +1,4 @@
-package rulebot
+package internal
 
 import (
 	"fmt"
