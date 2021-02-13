@@ -9,7 +9,7 @@ import (
 	gapi "google.golang.org/api/googleapi/transport"
 )
 
-func populateWebpages(ctx context.Context, opts Options) ([]string, bool) {
+func populateWebpages(ctx context.Context, searchQuery string, linkDepth int64) ([]string, bool) {
 
 	client := &http.Client{Transport: &gapi.APIKey{Key: GoogleToken}}
 
@@ -19,9 +19,9 @@ func populateWebpages(ctx context.Context, opts Options) ([]string, bool) {
 		return []string{}, false
 	}
 
-	resp, err := svc.Cse.List().Cx(GoogleCSE).Num(int64(opts.LinkDepth)).Q(opts.SearchQuery).Do()
+	resp, err := svc.Cse.List().Cx(GoogleCSE).Num(linkDepth).Q(searchQuery).Do()
 	if err != nil {
-		log.Fatalf("error executing search: %s, error recieved: %s\n", opts.SearchQuery, err)
+		log.Fatalf("error executing search: %s, error recieved: %s\n", searchQuery, err)
 		return []string{}, false
 	}
 

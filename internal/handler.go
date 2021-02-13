@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -20,16 +22,8 @@ type Options struct {
 const (
 	LINK_DEPTH_DEFAULT   = 1
 	SOURCE_DEPTH_DEFAULT = 3
-	TALK_TO_KELLEN       = "Something went wrong processing the search, tell Kellen to check the logs"
-	HELP_STRING          = ">>> \nRulebot usage: \t!rulebot [options] search terms\n\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +
-		"After the first non option string everything will be treated as a search term so options must come first!\n\n" +
-		"Options are listed as follows:\n\t/LD=[number]\t\t(Link Depth, default 1) Use this option to specify the number of links the bot will traverse looking for a topic\n" +
-		"\t/SD=[number]\t\t(Source Depth, default 3) Use this option to specify the number of source images the bot will post when it finds a topic\n" +
-		"\t/HELP\t\t Just prints this help message, also running !rulebot with no arguments will do the same things\n\n" +
-		"An example query is as follows: **!rulebot /LD=3 /SD=2 animal companions**\n" +
-		"When given the above query, the bot will traverse three links (if it finds that many) and post two source images (if there are that many) from each topic from those links\n\n" +
-		"Try to be as specific as possible with your searches\n" +
-		"If you find a bug tell Kellen about it\n"
+
+	FILE_EXTENSION = ".png"
 )
 
 // all that is supported right now, but maybe more to come???
@@ -37,7 +31,7 @@ func parseIntOption(option string) (int, bool) {
 
 	parsed := strings.Split(option, "=")
 
-	if 2 == len(parsed) {
+	if 2 != len(parsed) {
 		log.Printf("Unable to parse option: %s, into identifier and value pair", option)
 		return 0, false
 	}
@@ -102,6 +96,16 @@ func populateOptions(content string) (Options, string) {
 	return opts, ""
 }
 
+func convertToFilenames(sources []SourcePage) []string {
+
+	files := make([]string, 0, len(sources))
+	for _, source := range sources {
+		files = append(path.Join(RuleBooks, files[source.RuleBook+source.Page+FILE_EXTENSION]))
+	}
+
+	return files
+}
+
 func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
 	if !strings.HasPrefix(message.Content, "!rulebot") {
@@ -121,7 +125,7 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 	log.Printf("Options for message: %+v\n", opts)
 
 	ctx := context.TODO()
-	webpages, success := populateWebpages(ctx, opts)
+	webpages, success := populateWebpages(ctx, opts.SearchQuery, int64(opts.LinkDepth))
 	if !success {
 		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
 		return
@@ -130,6 +134,34 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 		return
 	}
 
-	fmt.Println(webpages)
-	session.ChannelMessageSend(message.ChannelID, HELP_STRING)
+	sources, ok := crawlLinks(ctx, webpages, opts.SourceDepth)
+	if !ok {
+		log.Fatalln("error occured while crawling links")
+		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
+		return
+	}
+
+	files := convertToFilenames(sources)
+	for _, filename := range files {
+		f, err := os.Open(filename)
+		if nil != err {
+			log.Fatalf("Error opening file for attachment: %s\n", err)
+			session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
+			continue
+		}
+
+		func() {
+			defer f.Close()
+			_, err := session.ChannelFileSend(message.ChannelID, filename, f)
+			if nil != err {
+				log.Fatalf("Error sending file: %s\n", err)
+				session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
+				return
+			}
+
+			log.Printf("Successfully sent file: %s\n", filename)
+		}
+	}
+
+	log.Println("Finished handling request")
 }
