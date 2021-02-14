@@ -9,9 +9,9 @@ import (
 )
 
 var rulebooks = map[string]bool{
-	"core":     true,
-	"advanced": true,
-	"agents":   true,
+	"core":  true,
+	"apg":   true,
+	"aoepg": true,
 }
 
 func validatePrefix(prefix string) bool {
@@ -47,7 +47,7 @@ func determineSP(f os.FileInfo) (int, bool) {
 	return startPage, true
 }
 
-func iterateFiles(startPage int, prefix string) {
+func iterateFiles(startPage int, prefix, extension string) {
 
 	files, err := ioutil.ReadDir(".")
 	if err != nil {
@@ -76,7 +76,7 @@ func iterateFiles(startPage int, prefix string) {
 			continue
 		}
 
-		newName := prefix + strconv.Itoa(startPage) + ".png"
+		newName := prefix + strconv.Itoa(startPage) + extension
 		fmt.Printf("Moving %s -> %s\n", f.Name(), newName)
 		err := os.Rename(f.Name(), newName)
 		if err != nil {
@@ -92,6 +92,7 @@ func main() {
 	rbPrefix := flag.String("rulebook", "core", "set rulebook prefix")
 	rbDir := flag.String("dir", ".", "set rulebook directory")
 	rbStartPageFlag := flag.Int("start", -1, "set rulebok start page")
+	rbExtension := flag.String("ext", ".jpg", "set file extension")
 	flag.Parse()
 
 	if !validatePrefix(*rbPrefix) {
@@ -111,5 +112,5 @@ func main() {
 		return
 	}
 
-	iterateFiles(*rbStartPageFlag, *rbPrefix)
+	iterateFiles(*rbStartPageFlag, *rbPrefix, *rbExtension)
 }

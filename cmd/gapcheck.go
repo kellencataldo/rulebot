@@ -29,7 +29,7 @@ func validateDir(rbDir string) bool {
 
 func iterateFiles(endPage int, prefix, ext string) {
 
-	for i := 0; i <= endPage; i++ {
+	for i := 1; i <= endPage; i++ {
 
 		filename := prefix + strconv.Itoa(i) + ext
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
@@ -44,7 +44,7 @@ func main() {
 
 	rbPrefix := flag.String("rulebook", "core", "set rulebook prefix")
 	rbDir := flag.String("dir", ".", "set rulebook directory")
-	rbExtension := flag.String("ext", ".png", "set rulebook file extension")
+	rbExtension := flag.String("ext", ".jpg", "set rulebook file extension")
 	rbEndPageFlag := flag.Int("end", -1, "set rulebok start page")
 	flag.Parse()
 

@@ -21,9 +21,9 @@ type Options struct {
 
 const (
 	LINK_DEPTH_DEFAULT   = 1
-	SOURCE_DEPTH_DEFAULT = 3
+	SOURCE_DEPTH_DEFAULT = 1
 
-	FILE_EXTENSION = ".png"
+	FILE_EXTENSION = ".jpg"
 )
 
 // all that is supported right now, but maybe more to come???
