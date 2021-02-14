@@ -3,3 +3,4 @@ cmd/mvfiles
 cmd/gapcheck
 main
 cache.json
+scripts/main

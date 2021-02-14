@@ -23,7 +23,7 @@ const (
 	LINK_DEPTH_DEFAULT   = 1
 	SOURCE_DEPTH_DEFAULT = 1
 
-	FILE_EXTENSION = ".jpg"
+	FILE_EXTENSION = ".png"
 )
 
 // all that is supported right now, but maybe more to come???
@@ -89,7 +89,7 @@ func populateOptions(content string) (Options, string) {
 		} else {
 			// unknown option here, just bail
 			log.Printf("Unknown option: %s, returning error\n", term)
-			return opts, fmt.Sprintf("Unknown option specified: %s, type **!ruleboy help** for supported options", term)
+			return opts, fmt.Sprintf("Unknown option specified: %s, type **!rulebot /HELP** for supported options", term)
 		}
 	}
 

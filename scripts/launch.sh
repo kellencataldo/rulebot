@@ -1,4 +1,6 @@
-go build cmd/main.go
+#!/bin/bash
+
+go build ../cmd/main.go
 retVal=$?
 if [ $retVal -ne 0 ]; then
     exit

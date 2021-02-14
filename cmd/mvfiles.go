@@ -92,7 +92,7 @@ func main() {
 	rbPrefix := flag.String("rulebook", "core", "set rulebook prefix")
 	rbDir := flag.String("dir", ".", "set rulebook directory")
 	rbStartPageFlag := flag.Int("start", -1, "set rulebok start page")
-	rbExtension := flag.String("ext", ".jpg", "set file extension")
+	rbExtension := flag.String("ext", ".png", "set file extension")
 	flag.Parse()
 
 	if !validatePrefix(*rbPrefix) {

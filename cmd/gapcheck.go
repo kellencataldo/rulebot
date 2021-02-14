@@ -8,9 +8,9 @@ import (
 )
 
 var rulebooks = map[string]bool{
-	"core":     true,
-	"advanced": true,
-	"agents":   true,
+	"core":  true,
+	"apg":   true,
+	"aoepg": true,
 }
 
 func validatePrefix(prefix string) bool {
@@ -30,7 +30,6 @@ func validateDir(rbDir string) bool {
 func iterateFiles(endPage int, prefix, ext string) {
 
 	for i := 1; i <= endPage; i++ {
-
 		filename := prefix + strconv.Itoa(i) + ext
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			fmt.Printf("File missing: %s\n", filename)
@@ -44,8 +43,8 @@ func main() {
 
 	rbPrefix := flag.String("rulebook", "core", "set rulebook prefix")
 	rbDir := flag.String("dir", ".", "set rulebook directory")
-	rbExtension := flag.String("ext", ".jpg", "set rulebook file extension")
-	rbEndPageFlag := flag.Int("end", -1, "set rulebok start page")
+	rbExtension := flag.String("ext", ".png", "set rulebook file extension")
+	rbEndPageFlag := flag.Int("end", -1, "set rulebok end page")
 	flag.Parse()
 
 	if !validatePrefix(*rbPrefix) {
