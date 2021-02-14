@@ -56,8 +56,6 @@ func populateOptions(content string) (Options, string) {
 	}
 
 	terms = terms[1:]
-	fmt.Println(terms)
-
 	for index, term := range terms {
 
 		if !strings.HasPrefix(term, "/") {

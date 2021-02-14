@@ -3,4 +3,4 @@ cloud_final_modules:
 - [scripts-user, always]
 
 runcmd:
- - [ sh, -c, "echo cooooool >> /home/ec2-user/cool.txt" ]
+ - [ sh, -c, "echo $DISCORD_TOKEN >> /home/ec2-user/cool.txt" ]
