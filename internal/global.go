@@ -56,12 +56,13 @@ func init() {
 	flag.StringVar(&CacheFile, "cache", "cache.json", "Location of the cache file used by crawler")
 	kellenID := flag.String("kellen", "Kellen", "How to tag Kellen in messages")
 	flag.Parse()
-	KellenTag = fmt.Sprintf("<@%s>", kellenID)
+	KellenTag = fmt.Sprintf("<@%s>", *kellenID)
 
 	PrefixMap["Core Rulebook"] = "core"
 	PrefixMap["Advanced Player's Guide"] = "apg"
 	PrefixMap["Agents of Edgewatch Player's Guide"] = "aoepg"
-	PrefixMap["Gamemastery Guide"] = "gm"
+	PrefixMap["Gamemastery Guide"] = "gamemaster guide"
+	PrefixMap["Character Guide"] = "character guide"
 
 	TALK_TO_KELLEN = fmt.Sprintf("Something went wrong processing the search, tell %s to check the logs", KellenTag)
 	HELP_STRING = ">>> \nRulebot usage: \t!rulebot [options] search terms\n\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +

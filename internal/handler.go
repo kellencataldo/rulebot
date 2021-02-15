@@ -163,6 +163,18 @@ func sendFile(filename, channelID string, session *dg.Session) {
 	log.Printf("Successfully sent file: %s\n", filename)
 }
 
+func isHiddenRulebook(rulebook string) bool {
+
+	switch {
+	case "gamemaster guide" == rulebook:
+		fallthrough
+	case "character guide" == rulebook:
+		return true
+	default:
+		return false
+	}
+}
+
 func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
 	ctx := context.TODO()
@@ -214,8 +226,8 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
 	for _, source := range sources {
 
-		if "gm" == source.Rulebook {
-			session.ChannelMessageSend(message.ChannelID, "Gamemaster guide pg. "+strconv.Itoa(source.Page))
+		if isHiddenRulebook(source.Rulebook) {
+			session.ChannelMessageSend(message.ChannelID, source.Rulebook+" pg. "+strconv.Itoa(source.Page))
 			continue
 		}
 
