@@ -8,7 +8,6 @@ import (
 type SourcePage struct {
 	Rulebook string `json:"rulebook"`
 	Page     int    `json:"page"`
-	Hidden   bool   `json:"hidden"`
 }
 
 type Cache map[string][]SourcePage
@@ -38,7 +37,7 @@ var (
 	GoogleCSE    string
 	Rulebooks    string
 	CacheFile    string
-	Kellen       string
+	KellenTag    string
 
 	TALK_TO_KELLEN string
 	HELP_STRING    string
@@ -55,16 +54,16 @@ func init() {
 	flag.StringVar(&GoogleCSE, "google-cse", "", "Custom search engine for google searches")
 	flag.StringVar(&Rulebooks, "rulebooks", ".", "Location of directory containing rule book images")
 	flag.StringVar(&CacheFile, "cache", "cache.json", "Location of the cache file used by crawler")
-	flag.StringVar(&Kellen, "kellen", "Kellen", "How to tag Kellen in messages")
-
+	kellenID := flag.String("kellen", "Kellen", "How to tag Kellen in messages")
 	flag.Parse()
+	KellenTag = fmt.Sprintf("<@%s>", kellenID)
 
 	PrefixMap["Core Rulebook"] = "core"
 	PrefixMap["Advanced Player's Guide"] = "apg"
 	PrefixMap["Agents of Edgewatch Player's Guide"] = "aoepg"
-	PrefixMap["Gamemastery Guide"] = "gm guide"
+	PrefixMap["Gamemastery Guide"] = "gm"
 
-	TALK_TO_KELLEN = fmt.Sprintf("Something went wrong processing the search, tell %s to check the logs", Kellen)
+	TALK_TO_KELLEN = fmt.Sprintf("Something went wrong processing the search, tell %s to check the logs", KellenTag)
 	HELP_STRING = ">>> \nRulebot usage: \t!rulebot [options] search terms\n\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +
 		"After the first non option string everything will be treated as a search term so options must come first!\n\n" +
 		"Options are listed as follows:\n\t/ld=[number]\t\t(Link Depth, default 1) Use this option to specify the number of links the bot will traverse looking for a topic\n" +
@@ -77,5 +76,5 @@ func init() {
 		"An example query is as follows: **!rulebot /ld=3 /sd=2 animal companions**\n" +
 		"When given the above query, the bot will traverse three links (if it finds that many) and post two source images (if there are that many) from each topic from those links\n\n" +
 		"Try to be as specific as possible with your searches\n" +
-		fmt.Sprintf("If you find a bug tell %s about it\n", Kellen)
+		fmt.Sprintf("If you find a bug tell %s about it\n", KellenTag)
 }

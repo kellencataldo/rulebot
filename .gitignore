@@ -1,6 +1,6 @@
-cmd/main
+cmd/rulebot
 cmd/mvfiles
 cmd/gapcheck
-main
+rulebot
 cache.json
-scripts/main
+scripts/rulebot

@@ -22,7 +22,7 @@ func filterRawSources(rawSources []string) []SourcePage {
 			if strings.HasPrefix(rawSource, rawPrefix) {
 				tempSplit := strings.Fields(rawSource)
 				pageNum, _ := strconv.Atoi(tempSplit[len(tempSplit)-1])
-				sources = append(sources, SourcePage{filePrefix, pageNum, filePrefix == "gm guide"})
+				sources = append(sources, SourcePage{filePrefix, pageNum})
 				converted = true
 				break
 			}

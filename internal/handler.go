@@ -64,17 +64,19 @@ func populateOptions(content string) (Options, string) {
 	terms = terms[1:]
 	for index, term := range terms {
 
-		if !strings.HasPrefix(term, "/") {
+		switch {
+
+		case !strings.HasPrefix(term, "/"):
 
 			// treat the rest of the terms as search terms. if there was a flag in there, thats on them.
 			opts.SearchQuery = strings.Join(terms[index:], " ")
 			break
 
-		} else if strings.HasPrefix(term, "/help") {
+		case strings.HasPrefix(term, "/help"):
 			log.Println("Explicit HELP argument found, returning help string")
 			return opts, HELP_STRING
 
-		} else if strings.HasPrefix(term, "/ld=") {
+		case strings.HasPrefix(term, "/ld="):
 			var success bool
 			opts.LinkDepth, success = parseIntOption(term)
 			if !success {
@@ -82,14 +84,15 @@ func populateOptions(content string) (Options, string) {
 				return opts, "Malformed /tail option, run **!rulebot /help** to see proper formatting"
 			}
 
-		} else if strings.HasPrefix(term, "/sd=") {
+		case strings.HasPrefix(term, "/sd="):
 			var success bool
 			opts.SourceDepth, success = parseIntOption(term)
 			if !success {
 				log.Printf("Unable to parse /sd option string: %s\n", term)
 				return opts, "Malformed /sd option, run **!rulebot /help** to see proper formatting"
 			}
-		} else if strings.HasPrefix(term, "/tail=") {
+
+		case strings.HasPrefix(term, "/tail="):
 			var success bool
 			opts.Tail, success = parseIntOption(term)
 			if !success {
@@ -97,7 +100,7 @@ func populateOptions(content string) (Options, string) {
 				return opts, "Malformed /tail option, run **!rulebot /help** to see proper formatting"
 			}
 
-		} else if strings.HasPrefix(term, "/apg=") {
+		case strings.HasPrefix(term, "/apg="):
 			opts.SpecificPageRB = "apg"
 			var success bool
 			opts.SpecificPage, success = parseIntOption(term)
@@ -105,7 +108,8 @@ func populateOptions(content string) (Options, string) {
 				log.Printf("Unable to parse /apg option string: %s\n", term)
 				return opts, "Malformed /apg option, run **!rulebot /help** to see proper formatting"
 			}
-		} else if strings.HasPrefix(term, "/aoepg=") {
+
+		case strings.HasPrefix(term, "/aoepg="):
 			opts.SpecificPageRB = "aoepg"
 			var success bool
 			opts.SpecificPage, success = parseIntOption(term)
@@ -114,7 +118,7 @@ func populateOptions(content string) (Options, string) {
 				return opts, "Malformed /aoepg option, run **!rulebot /help** to see proper formatting"
 			}
 
-		} else if strings.HasPrefix(term, "/core=") {
+		case strings.HasPrefix(term, "/core="):
 			opts.SpecificPageRB = "core"
 			var success bool
 			opts.SpecificPage, success = parseIntOption(term)
@@ -123,7 +127,7 @@ func populateOptions(content string) (Options, string) {
 				return opts, "Malformed /core option, run **!rulebot /help** to see proper formatting"
 			}
 
-		} else {
+		default:
 			// unknown option here, just bail
 			log.Printf("Unknown option: %s, returning error\n", term)
 			return opts, fmt.Sprintf("Unknown option specified: %s, type **!rulebot /help** for supported options", term)
@@ -210,8 +214,8 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
 	for _, source := range sources {
 
-		if source.Hidden {
-			session.ChannelMessageSend(message.ChannelID, source.Rulebook+" pg. "+strconv.Itoa(source.Page))
+		if "gm" == source.Rulebook {
+			session.ChannelMessageSend(message.ChannelID, "Gamemaster guide pg. "+strconv.Itoa(source.Page))
 			continue
 		}
 
