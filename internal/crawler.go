@@ -41,17 +41,15 @@ func filterRawSources(rawSources []string) []SourcePage {
 func findSources(ctx context.Context, webpage string, sourceDepth int, ch chan<- SourcePage, wg *sync.WaitGroup) {
 
 	defer wg.Done()
-	pages, ok := SourceCache.Get(webpage)
-	if ok {
+
+	if pages, ok := SourceCache.Get(webpage); ok {
 		log.Printf("Cached source for webpage: %s found\n", webpage)
 		for index, source := range pages {
 			if index == sourceDepth {
 				break
 			}
-
 			ch <- source
 		}
-
 		return
 	}
 
@@ -93,7 +91,6 @@ func crawlLinks(ctx context.Context, webpages []string, sourceDepth int) ([]Sour
 
 	ch := make(chan SourcePage, len(webpages)*sourceDepth)
 	var wg sync.WaitGroup
-
 	for _, webpage := range webpages {
 		wg.Add(1)
 		go findSources(ctx, webpage, sourceDepth, ch, &wg)

@@ -3,6 +3,7 @@ package internal
 import (
 	"flag"
 	"fmt"
+	"sync"
 )
 
 type SourcePage struct {
@@ -11,22 +12,6 @@ type SourcePage struct {
 }
 
 type Cache map[string][]SourcePage
-
-func (c *Cache) Get(page string) ([]SourcePage, bool) {
-	if nil == c {
-		return []SourcePage{}, false
-	}
-
-	sources, ok := (*c)[page]
-	return sources, ok
-}
-
-func (c *Cache) Put(page string, sources []SourcePage) {
-
-	if nil != c {
-		(*c)[page] = sources
-	}
-}
 
 // pretty much anything that needs an init goes here.
 
@@ -43,8 +28,30 @@ var (
 	HELP_STRING    string
 
 	SourceCache Cache
-	PrefixMap   map[string]string = make(map[string]string)
+	cacheLock   = sync.RWMutex{}
+
+	PrefixMap map[string]string = make(map[string]string)
 )
+
+func (c *Cache) Get(page string) ([]SourcePage, bool) {
+	if nil == c {
+		return []SourcePage{}, false
+	}
+
+	cacheLock.RLock()
+	defer cacheLock.RUnlock()
+	sources, ok := (*c)[page]
+	return sources, ok
+}
+
+func (c *Cache) Put(page string, sources []SourcePage) {
+
+	if nil != c {
+		cacheLock.Lock()
+		defer cacheLock.Unlock()
+		(*c)[page] = sources
+	}
+}
 
 func init() {
 

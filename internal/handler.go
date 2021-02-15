@@ -228,8 +228,9 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 		return
 	}
 
+	// second layer of de-dup (mostly for /tail queries)
+	sent := make(map[string]bool)
 	for _, source := range sources {
-
 		if isHiddenRulebook(source.Rulebook) {
 			session.ChannelMessageSend(message.ChannelID, source.Rulebook+" pg. "+strconv.Itoa(source.Page))
 			continue
@@ -237,6 +238,11 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
 		for i := 0; i <= opts.Tail; i++ {
 			filename := path.Join(Rulebooks, source.Rulebook+strconv.Itoa(source.Page+i)+FILE_EXTENSION)
+			if sent[filename] {
+				continue
+			}
+
+			sent[filename] = true
 			log.Printf("Sending discovered file: %s\n", filename)
 			sendFile(filename, message.ChannelID, session)
 		}
