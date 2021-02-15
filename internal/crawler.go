@@ -29,7 +29,7 @@ func filterRawSources(rawSources []string) []SourcePage {
 		}
 
 		if converted {
-			log.Printf("raw source %s converted to filename: %v\n", rawSource, sources[len(sources)-1])
+			log.Printf("raw source %s converted to source: %+v\n", rawSource, sources[len(sources)-1])
 		} else {
 			log.Printf("Not conversion found for raw source: %s\n", rawSource)
 		}
