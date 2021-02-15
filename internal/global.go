@@ -63,6 +63,9 @@ func init() {
 	PrefixMap["Agents of Edgewatch Player's Guide"] = "aoepg"
 	PrefixMap["Gamemastery Guide"] = "gamemaster guide"
 	PrefixMap["Character Guide"] = "character guide"
+	// hack below, since you can't guarantee map interation order, prefix must be unique.
+	PrefixMap["Bestiary pg"] = "bestiary 1"
+	PrefixMap["Bestiary 2"] = "bestiary 2"
 
 	TALK_TO_KELLEN = fmt.Sprintf("Something went wrong processing the search, tell %s to check the logs", KellenTag)
 	HELP_STRING = ">>> \nRulebot usage: \t!rulebot [options] search terms\n\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +

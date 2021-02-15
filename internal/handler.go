@@ -62,15 +62,16 @@ func populateOptions(content string) (Options, string) {
 	}
 
 	terms = terms[1:]
+
+ScannerLoop:
 	for index, term := range terms {
 
 		switch {
 
 		case !strings.HasPrefix(term, "/"):
-
 			// treat the rest of the terms as search terms. if there was a flag in there, thats on them.
 			opts.SearchQuery = strings.Join(terms[index:], " ")
-			break
+			break ScannerLoop
 
 		case strings.HasPrefix(term, "/help"):
 			log.Println("Explicit HELP argument found, returning help string")
@@ -134,6 +135,7 @@ func populateOptions(content string) (Options, string) {
 		}
 	}
 
+	log.Printf("Option parse successful, options for message: %+v\n", opts)
 	return opts, ""
 }
 
@@ -166,6 +168,10 @@ func sendFile(filename, channelID string, session *dg.Session) {
 func isHiddenRulebook(rulebook string) bool {
 
 	switch {
+	case "bestiary 1" == rulebook:
+		fallthrough
+	case "bestiary 2" == rulebook:
+		fallthrough
 	case "gamemaster guide" == rulebook:
 		fallthrough
 	case "character guide" == rulebook:
@@ -185,8 +191,6 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
 	log.Printf("handling message: %s\n", content)
 	opts, responseString := populateOptions(content)
-
-	log.Printf("Options for message: %+v\n", opts)
 
 	// ehhh, i could be smarter about this lol
 	if "" != responseString {
