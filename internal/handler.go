@@ -27,7 +27,7 @@ type Options struct {
 const (
 	LINK_DEPTH_DEFAULT   = 1
 	SOURCE_DEPTH_DEFAULT = 1
-	TAIL_DEFAULT         = 1
+	TAIL_DEFAULT         = 0
 
 	FILE_EXTENSION = ".png"
 )
@@ -179,7 +179,7 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 		return
 	} else if opts.SpecificPageRB != "" {
 
-		for i := 0; i < opts.Tail; i++ {
+		for i := 0; i <= opts.Tail; i++ {
 
 			filename := path.Join(Rulebooks, opts.SpecificPageRB+strconv.Itoa(opts.SpecificPage+i)+FILE_EXTENSION)
 			log.Printf("Sending specific file: %s\n", filename)
@@ -212,7 +212,7 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 			continue
 		}
 
-		for i := 0; i < opts.Tail; i++ {
+		for i := 0; i <= opts.Tail; i++ {
 			filename := path.Join(Rulebooks, source.Rulebook+strconv.Itoa(source.Page+i)+FILE_EXTENSION)
 			log.Printf("Sending discovered file: %s\n", filename)
 			sendFile(filename, message.ChannelID, session)
