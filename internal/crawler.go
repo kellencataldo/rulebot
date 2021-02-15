@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -20,7 +21,8 @@ func filterRawSources(rawSources []string) []SourcePage {
 		for rawPrefix, filePrefix := range PrefixMap {
 			if strings.HasPrefix(rawSource, rawPrefix) {
 				tempSplit := strings.Fields(rawSource)
-				sources = append(sources, SourcePage{filePrefix, tempSplit[len(tempSplit)-1]})
+				pageNum, _ := strconv.Atoi(tempSplit[len(tempSplit)-1])
+				sources = append(sources, SourcePage{filePrefix, pageNum, filePrefix == "gm guide"})
 				converted = true
 				break
 			}

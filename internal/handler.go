@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -17,11 +18,16 @@ type Options struct {
 	LinkDepth   int
 	SourceDepth int
 	SearchQuery string
+	Tail        int
+
+	SpecificPageRB string
+	SpecificPage   int
 }
 
 const (
 	LINK_DEPTH_DEFAULT   = 1
 	SOURCE_DEPTH_DEFAULT = 1
+	TAIL_DEFAULT         = 1
 
 	FILE_EXTENSION = ".png"
 )
@@ -48,7 +54,7 @@ func parseIntOption(option string) (int, bool) {
 func populateOptions(content string) (Options, string) {
 
 	terms := strings.Fields(content)
-	opts := Options{LINK_DEPTH_DEFAULT, SOURCE_DEPTH_DEFAULT, ""}
+	opts := Options{LINK_DEPTH_DEFAULT, SOURCE_DEPTH_DEFAULT, "", TAIL_DEFAULT, "", -1}
 
 	if len(terms) == 1 {
 		log.Println("No arguments specified, returning help string")
@@ -64,65 +70,125 @@ func populateOptions(content string) (Options, string) {
 			opts.SearchQuery = strings.Join(terms[index:], " ")
 			break
 
-		} else if strings.HasPrefix(term, "/HELP") {
+		} else if strings.HasPrefix(term, "/help") {
 			log.Println("Explicit HELP argument found, returning help string")
 			return opts, HELP_STRING
 
-		} else if strings.HasPrefix(term, "/LD=") {
+		} else if strings.HasPrefix(term, "/ld=") {
 			var success bool
 			opts.LinkDepth, success = parseIntOption(term)
 			if !success {
-				log.Printf("Unable to parse /LD option string: %s\n", term)
-				return opts, "Malformed /LD option, run **!rulebot /HELP** to see proper formatting"
+				log.Printf("Unable to parse /tail option string: %s\n", term)
+				return opts, "Malformed /tail option, run **!rulebot /help** to see proper formatting"
 			}
 
-		} else if strings.HasPrefix(term, "/SD=") {
+		} else if strings.HasPrefix(term, "/sd=") {
 			var success bool
 			opts.SourceDepth, success = parseIntOption(term)
 			if !success {
-				log.Printf("Unable to parse /SD option string: %s\n", term)
-				return opts, "Malformed /SD option, run **!rulebot /HELP** to see proper formatting"
+				log.Printf("Unable to parse /sd option string: %s\n", term)
+				return opts, "Malformed /sd option, run **!rulebot /help** to see proper formatting"
+			}
+		} else if strings.HasPrefix(term, "/tail=") {
+			var success bool
+			opts.Tail, success = parseIntOption(term)
+			if !success {
+				log.Printf("Unable to parse /tail option string: %s\n", term)
+				return opts, "Malformed /tail option, run **!rulebot /help** to see proper formatting"
+			}
+
+		} else if strings.HasPrefix(term, "/apg=") {
+			opts.SpecificPageRB = "apg"
+			var success bool
+			opts.SpecificPage, success = parseIntOption(term)
+			if !success {
+				log.Printf("Unable to parse /apg option string: %s\n", term)
+				return opts, "Malformed /apg option, run **!rulebot /help** to see proper formatting"
+			}
+		} else if strings.HasPrefix(term, "/aoepg=") {
+			opts.SpecificPageRB = "aoepg"
+			var success bool
+			opts.SpecificPage, success = parseIntOption(term)
+			if !success {
+				log.Printf("Unable to parse /aoepg option string: %s\n", term)
+				return opts, "Malformed /aoepg option, run **!rulebot /help** to see proper formatting"
+			}
+
+		} else if strings.HasPrefix(term, "/core=") {
+			opts.SpecificPageRB = "core"
+			var success bool
+			opts.SpecificPage, success = parseIntOption(term)
+			if !success {
+				log.Printf("Unable to parse /core option string: %s\n", term)
+				return opts, "Malformed /core option, run **!rulebot /help** to see proper formatting"
 			}
 
 		} else {
 			// unknown option here, just bail
 			log.Printf("Unknown option: %s, returning error\n", term)
-			return opts, fmt.Sprintf("Unknown option specified: %s, type **!rulebot /HELP** for supported options", term)
+			return opts, fmt.Sprintf("Unknown option specified: %s, type **!rulebot /help** for supported options", term)
 		}
 	}
 
 	return opts, ""
 }
 
-func convertToFilenames(sources []SourcePage) []string {
+func sendFile(filename, channelID string, session *dg.Session) {
 
-	files := make([]string, 0, len(sources))
-	for _, source := range sources {
-		files = append(files, path.Join(Rulebooks, source.Rulebook+source.Page+FILE_EXTENSION))
+	f, err := os.Open(filename)
+	if nil != err {
+		log.Printf("Error opening file for attachment: %s\n", err)
+
+		if os.IsNotExist(err) {
+			session.ChannelMessageSend(channelID, fmt.Sprintf("Can't find file: %s", filepath.Base(filename)))
+			return
+		}
+
+		session.ChannelMessageSend(channelID, TALK_TO_KELLEN)
+		return
 	}
 
-	return files
+	defer f.Close()
+	_, err = session.ChannelFileSend(channelID, filename, f)
+	if nil != err {
+		log.Printf("Error sending file: %s\n", err)
+		session.ChannelMessageSend(channelID, TALK_TO_KELLEN)
+		return
+	}
+
+	log.Printf("Successfully sent file: %s\n", filename)
 }
 
 func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
-	if !strings.HasPrefix(message.Content, "!rulebot") {
+	ctx := context.TODO()
+	content := strings.ToLower(message.Content)
+	if !strings.HasPrefix(content, "!rulebot") {
 		return
 	}
 
-	log.Printf("handling message: %s\n", message.Content)
-	opts, responseString := populateOptions(message.Content)
+	log.Printf("handling message: %s\n", content)
+	opts, responseString := populateOptions(content)
+
+	log.Printf("Options for message: %+v\n", opts)
 
 	// ehhh, i could be smarter about this lol
 	if "" != responseString {
 		log.Println("Error parsing options, or HELP specified")
 		session.ChannelMessageSend(message.ChannelID, responseString)
 		return
+	} else if opts.SpecificPageRB != "" {
+
+		for i := 0; i < opts.Tail; i++ {
+
+			filename := path.Join(Rulebooks, opts.SpecificPageRB+strconv.Itoa(opts.SpecificPage+i)+FILE_EXTENSION)
+			log.Printf("Sending specific file: %s\n", filename)
+			sendFile(filename, message.ChannelID, session)
+		}
+
+		return
 	}
 
-	log.Printf("Options for message: %+v\n", opts)
-
-	ctx := context.TODO()
 	webpages, success := populateWebpages(ctx, opts.SearchQuery, int64(opts.LinkDepth))
 	if !success {
 		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
@@ -139,27 +205,17 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 		return
 	}
 
-	files := convertToFilenames(sources)
-	for _, filename := range files {
-		f, err := os.Open(filename)
-		if nil != err {
-			log.Printf("Error opening file for attachment: %s\n", err)
-			session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
+	for _, source := range sources {
+
+		if source.Hidden {
+			session.ChannelMessageSend(message.ChannelID, source.Rulebook+" pg. "+strconv.Itoa(source.Page))
 			continue
 		}
 
-		func() {
-			defer f.Close()
-			_, err := session.ChannelFileSend(message.ChannelID, filename, f)
-			if nil != err {
-				log.Printf("Error sending file: %s\n", err)
-				session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
-				return
-			}
-
-			log.Printf("Successfully sent file: %s\n", filename)
-		}()
+		for i := 0; i < opts.Tail; i++ {
+			filename := path.Join(Rulebooks, source.Rulebook+strconv.Itoa(source.Page+i)+FILE_EXTENSION)
+			log.Printf("Sending discovered file: %s\n", filename)
+			sendFile(filename, message.ChannelID, session)
+		}
 	}
-
-	log.Println("Finished handling request")
 }

@@ -7,7 +7,8 @@ import (
 
 type SourcePage struct {
 	Rulebook string `json:"rulebook"`
-	Page     string `json:"page"`
+	Page     int    `json:"page"`
+	Hidden   bool   `json:"hidden"`
 }
 
 type Cache map[string][]SourcePage
@@ -61,14 +62,19 @@ func init() {
 	PrefixMap["Core Rulebook"] = "core"
 	PrefixMap["Advanced Player's Guide"] = "apg"
 	PrefixMap["Agents of Edgewatch Player's Guide"] = "aoepg"
+	PrefixMap["Gamemastery Guide"] = "gm guide"
 
 	TALK_TO_KELLEN = fmt.Sprintf("Something went wrong processing the search, tell %s to check the logs", Kellen)
 	HELP_STRING = ">>> \nRulebot usage: \t!rulebot [options] search terms\n\nOptions are prefixed with a forward slash and must be a non-interrupted string (IE no spaces).\n" +
 		"After the first non option string everything will be treated as a search term so options must come first!\n\n" +
-		"Options are listed as follows:\n\t/LD=[number]\t\t(Link Depth, default 1) Use this option to specify the number of links the bot will traverse looking for a topic\n" +
-		"\t/SD=[number]\t\t(Source Depth, default 3) Use this option to specify the number of source images the bot will post when it finds a topic\n" +
-		"\t/HELP\t\t Just prints this help message, also running !rulebot with no arguments will do the same things\n\n" +
-		"An example query is as follows: **!rulebot /LD=3 /SD=2 animal companions**\n" +
+		"Options are listed as follows:\n\t/ld=[number]\t\t(Link Depth, default 1) Use this option to specify the number of links the bot will traverse looking for a topic\n" +
+		"\t/sd=[number]\t\t(Source Depth, default 3) Use this option to specify the number of source images the bot will post when it finds a topic\n" +
+		"\t/core=[number]\t\t Use this option to post a specfic page from the core rule book\n" +
+		"\t/apg=[number]\t\t Use this option to post a specific page from the advanced player's guide\n" +
+		"\t/aoepg=[number]\t\t Use this option to post a specific page from the agents of edgewatch players guide\n" +
+		"\t/tail=[number] This option will post the specified amount of numerically subsequent pages from whatever source page it finds\n" +
+		"\t/help\t\t Just prints this help message, also running !rulebot with no arguments will do the same things\n\n" +
+		"An example query is as follows: **!rulebot /ld=3 /sd=2 animal companions**\n" +
 		"When given the above query, the bot will traverse three links (if it finds that many) and post two source images (if there are that many) from each topic from those links\n\n" +
 		"Try to be as specific as possible with your searches\n" +
 		fmt.Sprintf("If you find a bug tell %s about it\n", Kellen)
