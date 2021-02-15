@@ -220,7 +220,7 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
 	sources, ok := crawlLinks(ctx, webpages, opts.SourceDepth)
 	if !ok {
-		log.Fatalln("error occured while crawling links")
+		log.Println("Error occured while crawling links")
 		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
 		return
 	} else if 0 == len(sources) {
