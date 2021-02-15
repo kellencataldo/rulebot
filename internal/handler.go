@@ -203,6 +203,9 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 		log.Fatalln("error occured while crawling links")
 		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
 		return
+	} else if 0 == len(sources) {
+		session.ChannelMessageSend(message.ChannelID, "No results found, broaden your search")
+		return
 	}
 
 	for _, source := range sources {
