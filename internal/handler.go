@@ -1,8 +1,8 @@
 package internal
 
 import (
-	//	"errors"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -14,16 +14,6 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-type Options struct {
-	LinkDepth   int
-	SourceDepth int
-	SearchQuery string
-	Tail        int
-
-	SpecificPageRB string
-	SpecificPage   int
-}
-
 const (
 	LINK_DEPTH_DEFAULT   = 1
 	SOURCE_DEPTH_DEFAULT = 1
@@ -31,6 +21,57 @@ const (
 
 	FILE_EXTENSION = ".png"
 )
+
+type (
+	Query interface {
+		performQuery(context.Context) ([]SourcePage, error)
+		getTail() int
+	}
+
+	SpecificQuery struct {
+		SourcePage
+		Tail int
+	}
+
+	CrawlerQuery struct {
+		LinkDepth   int
+		SourceDepth int
+		SearchQuery string
+		Tail        int
+	}
+)
+
+func (sq SpecificQuery) getTail() int {
+	return sq.Tail
+}
+
+func (sq SpecificQuery) performQuery(ctx context.Context) ([]SourcePage, error) {
+	return []SourcePage{sq.SourcePage}, nil
+}
+
+func (cq CrawlerQuery) getTail() int {
+	return cq.Tail
+}
+
+func (cq CrawlerQuery) performQuery(ctx context.Context) ([]SourcePage, error) {
+
+	webpages, success := populateWebpages(ctx, cq.SearchQuery, int64(cq.LinkDepth))
+	if !success {
+		return []SourcePage{}, errors.New(TALK_TO_KELLEN)
+	} else if 0 == len(webpages) {
+		return []SourcePage{}, errors.New("No results found, broaden your search")
+	}
+
+	sources, ok := crawlLinks(ctx, webpages, cq.SourceDepth)
+	if !ok {
+		log.Println("Error occured while crawling links")
+		return sources, errors.New(TALK_TO_KELLEN)
+	} else if 0 == len(sources) {
+		return sources, errors.New("No results found, broaden your search")
+	}
+
+	return sources, nil
+}
 
 // all that is supported right now, but maybe more to come???
 func parseIntOption(option string) (int, bool) {
@@ -51,14 +92,14 @@ func parseIntOption(option string) (int, bool) {
 	return value, true
 }
 
-func populateOptions(content string) (Options, string) {
+func populateOptions(content string) (Query, error) {
 
 	terms := strings.Fields(content)
-	opts := Options{LINK_DEPTH_DEFAULT, SOURCE_DEPTH_DEFAULT, "", TAIL_DEFAULT, "", -1}
+	query := CrawlerQuery{LINK_DEPTH_DEFAULT, SOURCE_DEPTH_DEFAULT, "", TAIL_DEFAULT}
 
 	if len(terms) == 1 {
 		log.Println("No arguments specified, returning help string")
-		return opts, HELP_STRING
+		return query, errors.New(HELP_STRING)
 	}
 
 	terms = terms[1:]
@@ -70,73 +111,76 @@ ScannerLoop:
 
 		case !strings.HasPrefix(term, "/"):
 			// treat the rest of the terms as search terms. if there was a flag in there, thats on them.
-			opts.SearchQuery = strings.Join(terms[index:], " ")
+			query.SearchQuery = strings.Join(terms[index:], " ")
 			break ScannerLoop
 
 		case strings.HasPrefix(term, "/help"):
 			log.Println("Explicit HELP argument found, returning help string")
-			return opts, HELP_STRING
+			return query, errors.New(HELP_STRING)
 
 		case strings.HasPrefix(term, "/ld="):
 			var success bool
-			opts.LinkDepth, success = parseIntOption(term)
+			query.LinkDepth, success = parseIntOption(term)
 			if !success {
 				log.Printf("Unable to parse /tail option string: %s\n", term)
-				return opts, "Malformed /tail option, run **!rulebot /help** to see proper formatting"
+				return query, errors.New("Malformed /tail option, run **!rulebot /help** to see proper formatting")
 			}
 
 		case strings.HasPrefix(term, "/sd="):
 			var success bool
-			opts.SourceDepth, success = parseIntOption(term)
+			query.SourceDepth, success = parseIntOption(term)
 			if !success {
 				log.Printf("Unable to parse /sd option string: %s\n", term)
-				return opts, "Malformed /sd option, run **!rulebot /help** to see proper formatting"
+				return query, errors.New("Malformed /sd option, run **!rulebot /help** to see proper formatting")
 			}
 
 		case strings.HasPrefix(term, "/tail="):
 			var success bool
-			opts.Tail, success = parseIntOption(term)
+			query.Tail, success = parseIntOption(term)
 			if !success {
 				log.Printf("Unable to parse /tail option string: %s\n", term)
-				return opts, "Malformed /tail option, run **!rulebot /help** to see proper formatting"
+				return query, errors.New("Malformed /tail option, run **!rulebot /help** to see proper formatting")
 			}
 
 		case strings.HasPrefix(term, "/apg="):
-			opts.SpecificPageRB = "apg"
 			var success bool
-			opts.SpecificPage, success = parseIntOption(term)
-			if !success {
+			// If a tail option was already encountered, add it here.
+			pageQuery := SpecificQuery{SourcePage{Rulebook: "apg"}, query.Tail}
+			if pageQuery.SourcePage.Page, success = parseIntOption(term); !success {
 				log.Printf("Unable to parse /apg option string: %s\n", term)
-				return opts, "Malformed /apg option, run **!rulebot /help** to see proper formatting"
+				return pageQuery, errors.New("Malformed /apg option, run **!rulebot /help** to see proper formatting")
 			}
+			return pageQuery, nil
 
 		case strings.HasPrefix(term, "/aoepg="):
-			opts.SpecificPageRB = "aoepg"
 			var success bool
-			opts.SpecificPage, success = parseIntOption(term)
-			if !success {
+			// If a tail option was already encountered, add it here.
+			pageQuery := SpecificQuery{SourcePage{Rulebook: "aoepg"}, query.Tail}
+			if pageQuery.SourcePage.Page, success = parseIntOption(term); !success {
 				log.Printf("Unable to parse /aoepg option string: %s\n", term)
-				return opts, "Malformed /aoepg option, run **!rulebot /help** to see proper formatting"
+				return query, errors.New("Malformed /aoepg option, run **!rulebot /help** to see proper formatting")
 			}
+			return pageQuery, nil
 
 		case strings.HasPrefix(term, "/core="):
-			opts.SpecificPageRB = "core"
 			var success bool
-			opts.SpecificPage, success = parseIntOption(term)
-			if !success {
+			// If a tail option was already encountered, add it here.
+			pageQuery := SpecificQuery{SourcePage{Rulebook: "core"}, query.Tail}
+			if pageQuery.SourcePage.Page, success = parseIntOption(term); !success {
 				log.Printf("Unable to parse /core option string: %s\n", term)
-				return opts, "Malformed /core option, run **!rulebot /help** to see proper formatting"
+				return query, errors.New("Malformed /core option, run **!rulebot /help** to see proper formatting")
 			}
+			return pageQuery, nil
 
 		default:
 			// unknown option here, just bail
 			log.Printf("Unknown option: %s, returning error\n", term)
-			return opts, fmt.Sprintf("Unknown option specified: %s, type **!rulebot /help** for supported options", term)
+			return query, fmt.Errorf("Unknown option specified: %s, type **!rulebot /help** for supported options", term)
 		}
 	}
 
-	log.Printf("Option parse successful, options for message: %+v\n", opts)
-	return opts, ""
+	log.Printf("Option parse successful, options for message: %+v\n", query)
+	return query, nil
 }
 
 func sendFile(filename, channelID string, session *dg.Session) {
@@ -183,49 +227,31 @@ func isHiddenRulebook(rulebook string) bool {
 
 func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	content := strings.ToLower(message.Content)
+	if !strings.HasPrefix(content, "!") {
+		return
+	}
+
 	if !strings.HasPrefix(content, "!rulebot") {
+		// remove this if another bot is added to the channel lol
+		msg := fmt.Sprintf("It's \"!rulebot\" not \"%s\"", strings.Fields(content)[0])
+		session.ChannelMessageSend(message.ChannelID, msg)
 		return
 	}
 
 	log.Printf("handling message: %s\n", content)
-	opts, responseString := populateOptions(content)
+	query, err := populateOptions(content)
 
-	// ehhh, i could be smarter about this lol
-	if "" != responseString {
+	if err != nil {
 		log.Println("Error parsing options, or HELP specified")
-		session.ChannelMessageSend(message.ChannelID, responseString)
-		return
-	} else if opts.SpecificPageRB != "" {
-
-		for i := 0; i <= opts.Tail; i++ {
-
-			filename := path.Join(Rulebooks, opts.SpecificPageRB+strconv.Itoa(opts.SpecificPage+i)+FILE_EXTENSION)
-			log.Printf("Sending specific file: %s\n", filename)
-			sendFile(filename, message.ChannelID, session)
-		}
-
+		session.ChannelMessageSend(message.ChannelID, err.Error())
 		return
 	}
 
-	webpages, success := populateWebpages(ctx, opts.SearchQuery, int64(opts.LinkDepth))
-	if !success {
-		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
-		return
-	} else if 0 == len(webpages) {
-		session.ChannelMessageSend(message.ChannelID, "No results found, broaden your search")
-		return
-	}
-
-	sources, ok := crawlLinks(ctx, webpages, opts.SourceDepth)
-	if !ok {
-		log.Println("Error occured while crawling links")
-		session.ChannelMessageSend(message.ChannelID, TALK_TO_KELLEN)
-		return
-	} else if 0 == len(sources) {
-		session.ChannelMessageSend(message.ChannelID, "No results found, broaden your search")
-		return
+	sources, err := query.performQuery(ctx)
+	if err != nil {
+		session.ChannelMessageSend(message.ChannelID, err.Error())
 	}
 
 	// second layer of de-dup (mostly for /tail queries)
@@ -236,7 +262,7 @@ func MessageCreate(session *dg.Session, message *dg.MessageCreate) {
 			continue
 		}
 
-		for i := 0; i <= opts.Tail; i++ {
+		for i := 0; i <= query.getTail(); i++ {
 			filename := path.Join(Rulebooks, source.Rulebook+strconv.Itoa(source.Page+i)+FILE_EXTENSION)
 			if sent[filename] {
 				continue
